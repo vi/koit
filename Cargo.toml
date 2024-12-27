@@ -21,6 +21,7 @@ default = ["file-backend", "json-format", "bincode-format"]
 file-backend = ["tokio/fs", "tokio/io-util"]
 json-format = ["serde", "serde_json"]
 bincode-format = ["serde", "bincode"]
+file-path-backend = ["tokio/fs", "tokio/io-util"]
 
 
 [dependencies]

@@ -245,6 +245,7 @@ where
 #[cfg_attr(docsrs, doc(cfg(feature = "file-backend")))]
 pub type FileDatabase<D, F> = Database<D, backend::File, F>;
 
+
 #[cfg(feature = "file-backend")]
 impl<D, F> FileDatabase<D, F>
 where
@@ -313,6 +314,86 @@ where
     pub async fn load_from_path_or_default<P>(path: P) -> Result<Self, KoitError>
     where
         P: AsRef<std::path::Path>,
+        D: std::default::Default,
+    {
+        Self::load_from_path_or_else(path, || std::default::Default::default()).await
+    }
+}
+
+
+
+/// Note: this requires its futures to be executed on the Tokio 0.3 runtime.
+/// 
+/// Make sure to read comments in [`backend::FilePath`]
+#[cfg(feature = "file-path-backend")]
+#[cfg_attr(docsrs, doc(cfg(feature = "file-path-backend")))]
+pub type FilePathDatabase<D, F> = Database<D, backend::FilePath, F>;
+
+
+#[cfg(feature = "file-path-backend")]
+impl<D, F> FilePathDatabase<D, F>
+where
+    F: Format<D>,
+{
+    /// Construct the file-backed database from the given path. This attempts to load data
+    /// from the given file.
+    ///
+    /// # Errors
+    /// If the file cannot be read, or the [formatter](crate::format::Format) cannot decode the data,
+    /// an error variant will be returned.
+    pub async fn load_from_path(path: std::path::PathBuf) -> Result<Self, KoitError>
+    {
+        let mut backend = backend::FilePath::from_path(path)
+            .await
+            .map_err(|err| KoitError::BackendCreation(err.into()))?;
+
+        let bytes = backend
+            .read()
+            .await
+            .map_err(|err| KoitError::BackendRead(err.into()))?;
+        let data = F::from_bytes(bytes).map_err(|err| KoitError::FromFormat(err.into()))?;
+
+        Ok(Database {
+            data: RwLock::new(data),
+            backend: Mutex::new(backend),
+            _format: PhantomData,
+        })
+    }
+
+    /// Construct the file-backed database from the given path. If the file does not exist,
+    /// the file is created. Then `factory` is called and its return value is used as the initial value.
+    /// This data is immediately and saved to file.
+    pub async fn load_from_path_or_else<T>(path: std::path::PathBuf, factory: T) -> Result<Self, KoitError>
+    where
+        T: FnOnce() -> D,
+    {
+        let (mut backend, exists) = backend::FilePath::from_path_or_create(path)
+            .await
+            .map_err(|e| KoitError::BackendCreation(e.into()))?;
+
+        let data = if exists {
+            let bytes = backend
+                .read()
+                .await
+                .map_err(|err| KoitError::BackendRead(err.into()))?;
+            F::from_bytes(bytes).map_err(|err| KoitError::FromFormat(err.into()))?
+        } else {
+            factory()
+        };
+
+        let db = Database {
+            data: RwLock::new(data),
+            backend: Mutex::new(backend),
+            _format: PhantomData,
+        };
+
+        db.save().await?;
+        Ok(db)
+    }
+
+    /// Same as `load_from_path_or_else`, except it uses [`Default`](`std::default::Default`) instead of a factory.
+    pub async fn load_from_path_or_default(path: std::path::PathBuf) -> Result<Self, KoitError>
+    where
         D: std::default::Default,
     {
         Self::load_from_path_or_else(path, || std::default::Default::default()).await
