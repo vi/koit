@@ -37,7 +37,7 @@
 //! and [Bincode](crate::format::Bincode) formatters. You can also define your own storage
 //! [format](crate::format) or [backend](crate::backend).
 //!
-//! Note that the file-backed database requires the Tokio 0.3 runtime to function.
+//! Note that the file-backed database requires the Tokio runtime to function.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -240,7 +240,7 @@ where
 
 /// A file-backed database.
 ///
-/// Note: this requires its futures to be executed on the Tokio 0.3 runtime.
+/// Note: this requires its futures to be executed on the Tokio runtime.
 #[cfg(feature = "file-backend")]
 #[cfg_attr(docsrs, doc(cfg(feature = "file-backend")))]
 pub type FileDatabase<D, F> = Database<D, backend::File, F>;
@@ -322,7 +322,7 @@ where
 
 
 
-/// Note: this requires its futures to be executed on the Tokio 0.3 runtime.
+/// Note: this requires its futures to be executed on the Tokio runtime.
 /// 
 /// Make sure to read comments in [`backend::FilePath`]
 #[cfg(feature = "file-path-backend")]

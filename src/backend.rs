@@ -109,7 +109,7 @@ mod file {
 
     /// A file-backed backend.
     ///
-    /// Note: this requires its futures to be executed on the Tokio 0.3 runtime.
+    /// Note: this requires its futures to be executed on the Tokio runtime.
     #[cfg_attr(docsrs, doc(cfg(feature = "file-backend")))]
     #[derive(Debug)]
     pub struct File(tokio::fs::File);
@@ -209,7 +209,7 @@ mod file_path {
     /// 
     /// Note that this implementation is not protected against symlink shenanigans that can redirect the file write elsewhere.
     ///
-    /// Note: this requires its futures to be executed on the Tokio 0.3 runtime.
+    /// Note: this requires its futures to be executed on the Tokio runtime.
     #[cfg_attr(docsrs, doc(cfg(feature = "file-backend")))]
     #[derive(Debug)]
     pub struct FilePath(PathBuf);
